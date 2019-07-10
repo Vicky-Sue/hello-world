@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    
+
+    
+</body>
+<script>
+    function promise1(){
+        return new Promise(function(resolve,reject){
+            setTimeout(function(){
+                var res=61;
+                if(res>=60){
+                    resolve('语文分数是61分')
+                }else{
+                    reject()
+                }
+            },2000)
+        })
+    }
+
+    function promise2(){
+        return new Promise(function(resolve,reject){
+            setTimeout(function(){
+                var res=61;
+                if(res>=60){
+                    resolve('数学分数是61分')
+                }else{
+                    reject()
+                }
+            },2000)
+        })
+    }
+
+    // async 必须修饰一个函数
+    // 函数内部可以使用await等待异步的请求，res是返回请求的结果
+    async function test(){
+        var res1 = await promise1();
+        console.log(res1)
+
+        var res2 = await promise2();
+        console.log(res2)
+    }
+
+    test()
+
+</script>
+</html>
