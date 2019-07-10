@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>微博</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .weibo {
+      width: 600px;
+      border: 1px solid #ccc;
+
+      margin: 100px auto;
+      padding: 10px;
+
+    }
+
+    .weibo-text {
+      width: 590px;
+      height: 140px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      outline: none;
+      resize: none;
+    }
+
+    .weibo-text:focus {
+      border-color: #f60;
+    }
+
+    .weibo-btn {
+      width: 80px;
+      height: 30px;
+      background-color: #f90;
+      color: #fff;
+      border: 0 none;
+      margin-top: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: 0 none;
+    }
+
+    .weibo-list {
+      padding-top: 10px;
+    }
+
+    .weibo-list li {
+      font-size: 14px;
+      line-height: 30px;
+      border-bottom: 1px dotted #ccc;
+      overflow: hidden;
+    }
+
+    .weibo-list li p {
+      float: left;
+    }
+
+    .weibo-list li span {
+      float: right;
+      cursor: pointer;
+    }
+
+    .weibo-list li input {
+      height: 24px;
+      line-height: 24px;
+      width: 300px;
+      font-size: 14px;
+      border: 0 none;
+    }
+
+    .time {
+      margin-right: 10px;
+      font-style: normal;
+      float: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="weibo">
+    <textarea class="weibo-text"></textarea>
+    <input class="weibo-btn" value="发布" type="button">
+    <ul class="weibo-list">
+      <!-- <li>
+            <p class="content">快来收了这九款用上就停不下来的应用吧！！</p>
+            <span class="time"></span>
+            <span class="del">删除</span>
+        </li> -->
+    </ul>
+  </div>
+</body>
+<script>
+  function patchZero(v) {
+    return v < 10 ? '0' + v : v;
+  }
+
+  function formatDate() {
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = now.getMonth() + 1;
+    var d = now.getDate();
+    var h = now.getHours();
+    var mm = now.getMinutes();
+    var s = now.getSeconds();
+    return y + '-' + patchZero(m) + '-' + patchZero(d) + ' ' + patchZero(h) + ":" + patchZero(mm) + ':' + patchZero(s);
+  }
+
+  /*
+    功能：
+      1. 需要在本地存储里面把以前发布的微博存储起来，当打开页面的时候，把数据读取出来，以ul的形式展示
+      2. 点击发布，可以把文本域里面的内容，发布到ul里面，还要把数据同时存储到本地存储里面
+      3. 按着control+回车也可以实现发布
+      4. 点击删除
+
+    思路：
+      在本地存储里面存储一个微博数据的数组，每一条微博以对象的形式存储起来，本地存储里面只能存字符串——需要使用JSON格式把数组转换为字符串再存储。
+      当打开页面的时候，从本地存储里面把数据读取出来，因为读取出来是字符串，需要转换为js里面的数组才好操作——使用JSON的API转换。
+      得到的以前发布的微博数据——是一个数组
+      得到微博数组之后，遍历这个数组，生成多个li，插入到ul里面
+      实现发布效果
+        点击按钮的时候，获取文本域的内容，创建li，插入ul
+        ctrl+回车实现发布——事件对象里面有一个属性： keyCode 可以识别按下的按键
+      删除——事件委托删除
+
+    步骤：
+      效果1：
+        1.从本地存储中把数据读取出来
+        2.把字符串转换为js里面的数组
+        3.遍历数组，生成多个li，插入到ul里面
+
+      效果2：
+        1. 获取按钮
+        2. 注册点击事件
+        3. 获取文本域的内容，生成li，插入ul
+        4. 需要把新发布的数据，存储到localStorage里面
+            以数组的形式把多条微博数据，存任意localStorage里面
+            需要把数组转换为JSON格式才可以存储
+      效果3：
+        组合按键发布微博
+        1.给文本域注册键盘按下事件
+        2.判断是否同时按下ctrl和回车
+        3.如果是就执行发布的逻辑
+      
+      效果4：
+        删除功能
+        1. 使用事件委托的方式给所有的删除注册事件
+        2. 根据点击的按钮找打对一个li
+        3. 把li从ul里面移除
+        4. 还要把对应的数据从本地删除
+            我们要删除数据，需要根据一个唯一的依据
+            一般会给数据设定一个id属性，保证id属性是唯一的
+              如何保证id是唯一的
+                市面上使用的技术有很多种，有一些随机算法可以实现几乎不会重复的效果,比如：md5
+                我们这么来，我们使用时间戳+随机数的方式 - 后台经常使用的方式
+                  Date.now() + Math.random() * 100000
+            当我们要删除某个数据的时候，就根据id查找，然后删除即可
+  */
+
+//   先实现点击按钮发布的效果
+// 2.1 获取元素
+var btn = document.querySelector('.weibo-btn');
+var ul = document.querySelector('.weibo-list');
+var text = document.querySelector('.weibo-text');
+// 定义一个数组，用来存储所有的微博
+// var wbData = [];  
+// 2.2注册事件
+btn.onclick = function(){
+    // 2.3获取文本域内容
+    var content = text.value;
+    // 2.3.1获取当前时间
+    var time = formatDate();
+    // 生成一个唯一的id
+    var id = Date.now()+''+Math.floor(Math.random()*10000);//加双引号是为了让产生的数字隐式转换成字符串
+    // 2.6.1为了让顺序是新发布的在前面，把新的数据插入到数组的前面
+    wbData.unshift({
+        id : id,
+        time : time,
+        content : content,
+    });
+    // 2.4新建一个li
+    var li = document.createElement('li');
+    li.innerHTML = '<p class="content">'+content+'</p>'+'<span class="del" data-id="'+id+'">删除</span>'+'<span class="time">'+time+'</span>';
+    // 2.5插入到ul的最前面
+    ul.insertBefore(li,ul.children[0]);
+    // 2.6把新发布的微博，存储到本地存储的数据里面
+    // 2.6.2把数组变成JOSN格式的字符串
+    var result = JSON.stringify(wbData);
+    localStorage.setItem('wbshuju',result);
+    // 2.7把文本域清空
+    text.value = '';
+}
+// 实现一切发布的微博可以出现在页面的效果
+// 1.1先把以前发布的微博从本地存储里面获取出来
+var wbShuju = localStorage.getItem('wbshuju');
+// 1.2把字符串转换为js格式
+var wbData = JSON.parse(wbShuju);
+// 判断一下wbData里面是不是有数据，如果没有数据，初始化为一个空数组
+if (wbData == null){
+    wbData = [];
+}
+// 1.3遍历数组，生成多个li
+wbData.forEach(function(e,i){
+    // 生成li
+    var li = document.createElement('li');
+    li.innerHTML= '<p class="content">'+e.content+'</p>'+'<span class="del" data-id="'+e.id+'">删除</span>'+'<span class="time">'+e.time+'</span>';
+    // 插入到ul的末尾
+    // ul.appendChild(li);
+    ul.appendChild(li);
+})
+// 实现组合键发布
+// 3.1给文本域注册按下事件
+text.onkeydown = function(e){
+    // 3.2判断是否同时按下ctrl和回车
+    if(e.ctrlKey && e.keyCode === 13){
+        // 获取文本域的内容，发布到微博里面，存储到本地
+        btn.onclick();
+    }
+}
+// 实现删除
+// 使用事件委托的方式实现删除的点击
+ul.addEventListener('click',function(e){
+    // 判断点击的是否是span
+    if(e.target.nodeName === 'SPAN'){
+        // 执行删除的逻辑
+        var li = e.target.parentNode;
+        // 从ul身上把li移除
+        ul.removeChild(li);
+        // 清除数据-根据id删除，先得到点击的按钮的id
+        var delId = e.target.dataset.id;
+        // 判断数组里面的数据，是否有和我的id是一致的，如果有，就删除掉
+        wbData.forEach(function(e,i){
+            if(e.id === delId){
+                // wbData.splice(从哪里开始删除，总共删除多少个)
+                wbData.splice(i,1);
+            }
+        });
+        // 把新的数组，直接存储到localStorage里面，覆盖掉原来的内容就把删除的数据删掉了
+        var result =JSON.stringify(wbData);
+        localStorage.setItem('wbshuju',result);
+    }
+});
+</script>
+
+</html>
